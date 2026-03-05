@@ -170,6 +170,21 @@ class ResidualAttentionBlock(nn.Module):
         x = x + self.mlp(self.mlp_ln(x))
         return x
 
+class SpectralEnhancer(nn.Module):
+    # Custom: Learned weights for scaling frequency bins. 
+    def __init__(self, n_mels:int= 80):
+        super().__init__()
+        self.enhance = nn.Parameter(torch.ones(n_mels)) 
+        with torch.no_grad(): 
+            self.enhance[50:] = 1.1 # this should be roughly 2khz+
+
+    def forward(self, x):
+        return x * self.enhance.unsqueeze(-1) # unsqueeze to [80] -> [80, 1]
+
+
+# class FrequencyAttention(nn.Module):
+#     def __init__(self, n_mels: int=80):
+#         super().__init__
 
 class AudioEncoder(nn.Module):
     def __init__(
@@ -185,11 +200,15 @@ class AudioEncoder(nn.Module):
         )
         self.ln_post = LayerNorm(n_state)
 
+        # Add enhancer layer:
+        #self.spectralenhancer = SpectralEnhancer()
+
     def forward(self, x: Tensor):
         """
         x : torch.Tensor, shape = (batch_size, n_mels, n_ctx)
             the mel spectrogram of the audio
         """
+        #x = self.spectralenhancer(x)
         x = F.gelu(self.conv1(x))
         x = F.gelu(self.conv2(x))
         x = x.permute(0, 2, 1)

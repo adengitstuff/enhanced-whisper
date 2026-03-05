@@ -153,7 +153,7 @@ def load_model(
 
     dims = ModelDimensions(**checkpoint["dims"])
     model = Whisper(dims)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    model.load_state_dict(checkpoint["model_state_dict"]) ## Core test here: strict=false should keep pretrained weights + let new custom layers be added
 
     if alignment_heads is not None:
         model.set_alignment_heads(alignment_heads)
